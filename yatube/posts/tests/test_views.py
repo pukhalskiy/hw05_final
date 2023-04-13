@@ -64,7 +64,6 @@ class PostPagesTests(TestCase):
                  group=self.group_one) for i in range(NUMBER_OF_POSTS)
         ]
         Post.objects.bulk_create(posts)
-        time.sleep(0.00001)
         Post.objects.create(author=self.user, text='Тестовый постa',
                             group=self.group_two, image=self.uploaded)
         Follow.objects.create(user=self.user, author=self.user2)
