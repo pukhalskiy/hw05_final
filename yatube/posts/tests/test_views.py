@@ -1,14 +1,16 @@
-from django.contrib.auth import get_user_model
-from django.test import Client, TestCase, override_settings
-from django.urls import reverse
-from django import forms
-from ..models import Group, Post, Follow
-import time
-from django.core.files.uploadedfile import SimpleUploadedFile
 import shutil
 import tempfile
+from http import HTTPStatus
+
+from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
+
+from ..models import Follow, Group, Post
 
 User = get_user_model()
 
@@ -62,7 +64,6 @@ class PostPagesTests(TestCase):
                  group=self.group_one) for i in range(NUMBER_OF_POSTS)
         ]
         Post.objects.bulk_create(posts)
-        time.sleep(0.00001)
         Post.objects.create(author=self.user, text='Тестовый постa',
                             group=self.group_two, image=self.uploaded)
         Follow.objects.create(user=self.user, author=self.user2)
@@ -91,33 +92,36 @@ class PostPagesTests(TestCase):
         response = self.authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': 'auth2'}))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertTrue(Follow.objects.filter(user=self.user,
                                               author=self.user2).exists())
 
     def test_profile_unfollow(self):
+        Follow.objects.filter(user=self.user, author=self.user2).delete()
         Follow.objects.create(user=self.user, author=self.user2)
         response = self.authorized_client.get(reverse(
             'posts:profile_unfollow',
             kwargs={'username': 'auth2'}))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(Follow.objects.filter(user=self.user,
                                                author=self.user2).exists())
 
     def test_profile_follow_already_following(self):
+        Follow.objects.filter(user=self.user, author=self.user2).delete()
         Follow.objects.create(user=self.user, author=self.user2)
         response = self.authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': 'auth2'}))
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(Follow.objects.filter(user=self.user,
-                                              author=self.user2).exists())
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertTrue(Follow.objects.filter(
+            user=self.user,
+            author=self.user2).distinct().exists())
 
     def test_profile_unfollow_not_following(self):
         response = self.authorized_client.get(reverse(
             'posts:profile_unfollow',
             kwargs={'username': 'auth2'}))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertFalse(Follow.objects.filter(user=self.user,
                                                author=self.user2).exists())
 

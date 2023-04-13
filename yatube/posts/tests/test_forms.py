@@ -1,13 +1,15 @@
-from django.test import TestCase, Client, override_settings
-from django.contrib.auth import get_user_model
-from ..models import Group, Post, Comment
-from django.urls import reverse
-from ..forms import PostForm, CommentForm
 from http import HTTPStatus
-from django.conf import settings
 import shutil
 import tempfile
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, Client, override_settings
+from django.urls import reverse
+
+from ..forms import PostForm, CommentForm
+from ..models import Group, Post, Comment
 
 User = get_user_model()
 
@@ -70,6 +72,30 @@ class PostFormsTests(TestCase):
         self.assertTrue(Post.objects.filter(text='Тестовый постaа',
                                             group=self.group.id,
                                             ).exists())
+
+    def test_create_post_with_no_image(self):
+        small_doc = b'image'
+        incorrect_upload = SimpleUploadedFile(
+            name='not_img',
+            content=small_doc,
+            content_type='not_img'
+        )
+        form_data = {
+            'image': incorrect_upload,
+            'text': 'Тестовый',
+        }
+        response = self.authorized_client.post(
+            reverse('posts:post_create'),
+            data=form_data
+        )
+        self.assertFormError(
+            response,
+            'form',
+            'image',
+            ('Загрузите правильное изображение. Файл,'
+             ' который вы загрузили, поврежден или не'
+             ' является изображением.')
+        )
 
     def test_edit_post(self):
         form_data = {

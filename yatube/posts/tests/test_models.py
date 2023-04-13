@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+
 from ..models import Group, Post, NUMBER_OF_CHARACTERS_IN_POST
 
 User = get_user_model()
@@ -26,6 +27,8 @@ class PostModelTest(TestCase):
         expected_value = post.text[:NUMBER_OF_CHARACTERS_IN_POST]
         self.assertEqual(expected_value,
                          str(post.text[:NUMBER_OF_CHARACTERS_IN_POST]))
+
+    def test_model_group_have_correct_name(self):
         group = PostModelTest.group
         expected_title = group.title
         self.assertEqual(expected_title, str(group))
