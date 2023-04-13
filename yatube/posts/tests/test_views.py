@@ -72,6 +72,15 @@ class PostPagesTests(TestCase):
         super().tearDown()
         shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
+    def test_subscribe_to_self(self):
+        response = self.authorized_client.get(reverse(
+            'posts:profile_follow',
+            kwargs={'username': 'auth2'}))
+        self.assertEqual(response.status_code, 302)
+        follow_obj_exists = Follow.objects.filter(user=self.user,
+                                                  author=self.user).exists()
+        self.assertFalse(follow_obj_exists)
+
     def test_new_post_appears_in_subscriptions(self):
         new_post = Post.objects.create(
             author=self.user2,
